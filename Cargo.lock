@@ -394,6 +394,7 @@ dependencies = [
  "futures-timer",
  "midir",
  "tokio",
+ "wmidi",
 ]
 
 [[package]]
@@ -2692,6 +2693,12 @@ checksum = "0120db82e8a1e0b9fb3345a539c478767c0048d842860994d96113d5b667bd69"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "wmidi"
+version = "4.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b7ff057a07cdcca1dce95859fb6e205dc99a9bc526d72f3d724468a12aa74a5"
 
 [[package]]
 name = "xml-rs"

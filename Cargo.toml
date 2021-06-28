@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 midir = "0.7"
+wmidi = "4.0"
 buttplug = "4.0"
 tokio = { version = "1.7", features = ["full"] }
 futures = "0.3.15"

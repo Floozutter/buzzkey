@@ -1,17 +1,16 @@
 use midir::{MidiInput, MidiInputPort};
+use wmidi::MidiMessage;
 use buttplug::{
     client::{
         ButtplugClient, ButtplugClientEvent, ButtplugClientDeviceMessageType, 
         VibrateCommand,
     },
     server::ButtplugServerOptions,
-    util::async_manager,
 };
 use tokio::io::{self, AsyncBufReadExt, BufReader};
 use tokio::runtime::Handle;
-use futures::StreamExt;
-use futures_timer::Delay;
-use std::{error::Error, time::Duration, io::Write};
+use futures::{StreamExt, Stream};
+use std::{error::Error, convert::TryFrom, collections::HashMap, io::Write};
 
 fn prompt_midi(
     client_name: &str
@@ -46,59 +45,64 @@ fn prompt_midi(
     }
 }
 
+async fn handle_scanning(mut event_stream: impl Stream<Item = ButtplugClientEvent> + Unpin) {
+    loop {
+        match event_stream.next().await.unwrap() {
+            ButtplugClientEvent::DeviceAdded(dev) => {
+                tokio::spawn(async move {
+                    println!("device added: {}", dev.name);
+                });
+            },
+            ButtplugClientEvent::ScanningFinished => {
+                println!("scanning finished signaled!");
+                return;
+            },
+            ButtplugClientEvent::ServerDisconnect => {
+                println!("server disconnected!");
+            },
+            _ => {
+                println!("something happened!");
+            },
+        }
+    };
+}
+
 async fn run() -> Result<(), Box<dyn Error>> {
     // select MIDI input port
     let (imidi, iport) = prompt_midi("buzzkey midir input")?;
-    // connect Buttplug
+    // connect Buttplug devices
     let client = ButtplugClient::new("buzzkey buttplug client");
-    let mut event_stream = client.event_stream();
+    let event_stream = client.event_stream();
     client.connect_in_process(&ButtplugServerOptions::default()).await?;
-    // scan for devices
     client.start_scanning().await?;
-    async_manager::spawn(async move {
-        loop {
-            match event_stream.next().await.unwrap() {
-                ButtplugClientEvent::DeviceAdded(dev) => {
-                    async_manager::spawn(async move {
-                        println!("device added: {}", dev.name);
-                    }).unwrap();
-                },
-                ButtplugClientEvent::ScanningFinished => (),
-                ButtplugClientEvent::ServerDisconnect => {
-                    println!("server disconnected!");
-                },
-                _ => {
-                    println!("something happened!");
-                },
-            }
-        }
-    })?;
-    println!("scanning started! press enter at any point to stop and start buzzing.");
+    let scan_handler = tokio::spawn(handle_scanning(event_stream));
+    println!("\nscanning started! press enter at any point to stop and start buzzing.");
     BufReader::new(io::stdin()).lines().next_line().await?;
     client.stop_scanning().await?;
-    // buzz on MIDI input
+    scan_handler.await?;
+    // connect to MIDI input port
+    let mut notes = HashMap::new();
     let handle = Handle::current();
-    let _iport_connection = imidi.connect(&iport, "buzzkey_iport", move |stamp, message, _| {
-        println!("{}: {:?} (len = {})", stamp, message, message.len());
-        let status = message[0];
-        println!("{:b}", status >> 4);
-        if status >> 4 == 0b1001 {
+    let _iport_connection = imidi.connect(&iport, "buzzkey_iport", move |_, bytes, _| {
+        if let Some((c, n, p)) = match MidiMessage::try_from(bytes) {
+            Ok(MidiMessage::NoteOn(c, n, v)) => Some((c, n, u8::from(v))),
+            Ok(MidiMessage::NoteOff(c, n, _)) => Some((c, n, 0)),
+            _ => None,
+        } {
+            notes.insert((c, n), p);
+            let sum: u32 = notes.values().map(|&p| p as u32).sum();
+            let speed = (sum as f64 / 254.0).max(0.0).min(1.0);
+            println!("{} {}", sum, speed);
             for dev in client.devices() {
                 handle.spawn(async move {
                     if dev.allowed_messages.contains_key(&ButtplugClientDeviceMessageType::VibrateCmd) {
-                        dev.vibrate(VibrateCommand::Speed(1.0)).await.unwrap();
-                        println!("{} should start vibrating!", dev.name);
-                        Delay::new(Duration::from_millis(50)).await;
-                        dev.stop().await.unwrap();
-                        println!("{} should stop vibrating!", dev.name);
-                    } else {
-                        println!("{} doesn't vibrate!", dev.name);
+                        dev.vibrate(VibrateCommand::Speed(speed)).await.unwrap();
                     }
                 });
             }
         }
     }, ())?;
-    println!("buzzing started! press enter at any point to quit.");
+    println!("\nbuzzing started! press enter at any point to quit.");
     BufReader::new(io::stdin()).lines().next_line().await?;
     println!("bye-bye! >:3c");
     Ok(())
@@ -108,5 +112,5 @@ async fn run() -> Result<(), Box<dyn Error>> {
 async fn main() {
     if let Err(err) = run().await {
         eprintln!("error: {}!", err);
-    };
+    }
 }
