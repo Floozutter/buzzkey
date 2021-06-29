@@ -76,7 +76,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
     client.connect_in_process(&ButtplugServerOptions::default()).await?;
     client.start_scanning().await?;
     let scan_handler = tokio::spawn(handle_scanning(event_stream));
-    println!("\nscanning started! press enter at any point to stop and start buzzing.");
+    println!("\nscanning for devices! press enter at any point to stop scanning and connect MIDI.");
     BufReader::new(io::stdin()).lines().next_line().await?;
     client.stop_scanning().await?;
     scan_handler.await?;
@@ -102,7 +102,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
             }
         }
     }, ())?;
-    println!("\nbuzzing started! press enter at any point to quit.");
+    println!("\nconnected MIDI input to device output! press enter at any point to quit.");
     BufReader::new(io::stdin()).lines().next_line().await?;
     println!("bye-bye! >:3c");
     Ok(())
