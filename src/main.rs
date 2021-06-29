@@ -82,6 +82,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
     scan_handler.await?;
     // connect to MIDI input port
     let handle = Handle::current();
+    let devices = client.devices();
     let mut notes = HashMap::new();
     let _iport_connection = imidi.connect(&iport, "buzzkey_iport", move |_, bytes, _| {
         if let Some((c, n, p)) = match MidiMessage::try_from(bytes) {
@@ -93,7 +94,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
             let sum: u32 = notes.values().map(|&p| p as u32).sum();
             let speed = (sum as f64 / 254.0).max(0.0).min(1.0);
             println!("{} {}", sum, speed);
-            for dev in client.devices() {
+            for dev in devices.clone() {
                 handle.spawn(async move {
                     if dev.allowed_messages.contains_key(&ButtplugClientDeviceMessageType::VibrateCmd) {
                         dev.vibrate(VibrateCommand::Speed(speed)).await.unwrap();
@@ -104,6 +105,8 @@ async fn run() -> Result<(), Box<dyn Error>> {
     }, ())?;
     println!("\nconnected MIDI input to device output! press enter at any point to quit.");
     BufReader::new(io::stdin()).lines().next_line().await?;
+    println!("stopping all devices and quitting...");
+    client.stop_all_devices().await?;
     println!("bye-bye! >:3c");
     Ok(())
 }
