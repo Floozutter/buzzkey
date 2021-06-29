@@ -81,8 +81,8 @@ async fn run() -> Result<(), Box<dyn Error>> {
     client.stop_scanning().await?;
     scan_handler.await?;
     // connect to MIDI input port
-    let mut notes = HashMap::new();
     let handle = Handle::current();
+    let mut notes = HashMap::new();
     let _iport_connection = imidi.connect(&iport, "buzzkey_iport", move |_, bytes, _| {
         if let Some((c, n, p)) = match MidiMessage::try_from(bytes) {
             Ok(MidiMessage::NoteOn(c, n, v)) => Some((c, n, u8::from(v))),
