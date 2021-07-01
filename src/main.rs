@@ -93,7 +93,10 @@ async fn run() -> Result<(), Box<dyn Error>> {
             notes.insert((c, n), p);
             let sum: u32 = notes.values().map(|&p| p as u32).sum();
             let speed = (sum as f64 / 254.0).max(0.0).min(1.0);
-            println!("note power: {:>4}  |  vibration speed: {}", sum, speed);
+            println!(
+                "note power: {:>4}  |  vibration speed: {:.5}  [{:<5}]",
+                sum, speed, "=".repeat((speed * 5.0) as usize)
+            );
             for dev in devices.clone() {
                 handle.spawn(async move {
                     if dev.allowed_messages.contains_key(&ButtplugClientDeviceMessageType::VibrateCmd) {
