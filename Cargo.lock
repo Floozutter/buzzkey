@@ -390,6 +390,7 @@ name = "buzzkey"
 version = "0.1.0"
 dependencies = [
  "buttplug",
+ "clap",
  "futures",
  "futures-timer",
  "midir",
