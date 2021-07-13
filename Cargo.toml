@@ -11,4 +11,3 @@ buttplug = "4.0"
 clap = "2.33"
 tokio = { version = "1.7", features = ["full"] }
 futures = "0.3.15"
-futures-timer = "3.0"

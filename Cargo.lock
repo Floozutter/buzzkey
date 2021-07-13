@@ -392,7 +392,6 @@ dependencies = [
  "buttplug",
  "clap",
  "futures",
- "futures-timer",
  "midir",
  "tokio",
  "wmidi",
