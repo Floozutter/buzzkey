@@ -83,7 +83,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
     // connect to MIDI input port
     let handle = Handle::current();
     let devices = client.devices();
-    let mut notes = HashMap::new();  // TODO: use set instead
+    let mut notes = HashMap::new();
     let _iport_connection = imidi.connect(&iport, "buzzkey_iport", move |_, bytes, _| {
         if let Some((c, n, p)) = match MidiMessage::try_from(bytes) {
             Ok(MidiMessage::NoteOn(c, n, v)) => Some((c, n, u8::from(v))),
