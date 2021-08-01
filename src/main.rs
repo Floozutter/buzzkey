@@ -110,13 +110,16 @@ async fn run() -> Result<(), Box<dyn Error>> {
     BufReader::new(io::stdin()).lines().next_line().await?;
     println!("stopping all devices and quitting...");
     client.stop_all_devices().await?;
-    println!("bye-bye! >:3c");
     Ok(())
 }
 
-#[tokio::main]
-async fn main() {
-    if let Err(err) = run().await {
-        eprintln!("error: {}!", err);
-    }
+fn main() {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    match runtime.block_on(run()) {
+        Ok(()) => { println!("bye-bye! >:3c"); },
+        Err(e) => { eprintln!("error: {}!", e); },
+    };
 }
