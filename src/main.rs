@@ -114,10 +114,14 @@ async fn run() -> Result<(), Box<dyn Error>> {
 }
 
 fn main() {
+    // get command-line arguments
     let _matches = clap::App::new("buzzkey")
         .version("0.1")
         .about("get a buzz on MIDI input!")
         .get_matches();
+    // get MIDI input
+    //...
+    // start async runtime
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
