@@ -67,9 +67,7 @@ async fn handle_scanning(mut event_stream: impl Stream<Item = ButtplugClientEven
     };
 }
 
-async fn run() -> Result<(), Box<dyn Error>> {
-    // select MIDI input port
-    let (imidi, iport) = prompt_midi("buzzkey midir input")?;
+async fn run(imidi: MidiInput, iport: MidiInputPort) -> Result<(), Box<dyn Error>> {
     // connect Buttplug devices
     let client = ButtplugClient::new("buzzkey buttplug client");
     let event_stream = client.event_stream();
@@ -119,15 +117,18 @@ fn main() {
         .version("0.1")
         .about("get a buzz on MIDI input!")
         .get_matches();
-    // get MIDI input
-    //...
-    // start async runtime
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    match runtime.block_on(run()) {
+    // connect MIDI to Buttplug
+    let res: Result<(), Box<dyn Error>> = (|| -> Result<(), Box<dyn Error>> {
+        // get MIDI input
+        let (imidi, iport) = prompt_midi("buzzkey midir input")?;
+        // start async runtime
+        let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+        runtime.block_on(run(imidi, iport))?;
+        Ok(())
+    })();
+    // say goodbye
+    match res {
         Ok(()) => { println!("bye-bye! >:3c"); },
-        Err(e) => { eprintln!("error: {}!", e); },
-    };
+        Err(e) => { eprintln!("error: {}", e); },
+    }
 }
