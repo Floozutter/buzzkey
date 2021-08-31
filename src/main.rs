@@ -118,7 +118,7 @@ fn main() {
         .about("get a buzz on MIDI input!")
         .get_matches();
     // connect MIDI to Buttplug
-    let res: Result<(), Box<dyn Error>> = (|| -> Result<(), Box<dyn Error>> {
+    let completion: Result<(), Box<dyn Error>> = (|| -> Result<(), Box<dyn Error>> {
         // get MIDI input
         let (imidi, iport) = prompt_midi("buzzkey midir input")?;
         // start async runtime
@@ -127,7 +127,7 @@ fn main() {
         Ok(())
     })();
     // say goodbye
-    match res {
+    match completion {
         Ok(()) => { println!("bye-bye! >:3c"); },
         Err(e) => { eprintln!("error: {}", e); },
     }
