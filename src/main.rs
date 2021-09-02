@@ -122,7 +122,9 @@ fn main() {
         // get MIDI input
         let (imidi, iport) = prompt_midi("buzzkey midir input")?;
         // start async runtime
-        let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()?;
         runtime.block_on(run(imidi, iport))?;
         Ok(())
     })();
