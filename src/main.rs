@@ -64,7 +64,7 @@ async fn handle_scanning(mut event_stream: impl Stream<Item = ButtplugClientEven
                 println!("something happened!");
             },
         }
-    };
+    }
 }
 
 async fn run(imidi: MidiInput, iport: MidiInputPort) -> Result<(), Box<dyn Error>> {
