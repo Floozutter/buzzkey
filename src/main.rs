@@ -89,8 +89,8 @@ async fn run(imidi: MidiInput, iport: MidiInputPort) -> Result<(), Box<dyn Error
             _ => None,
         } {
             notes.insert((c, n), p);
-            let sum = notes.values().map(|&p| p as u32).sum::<u32>();
-            let speed = (sum as f64 / 254.0).max(0.0).min(1.0);
+            let sum = notes.values().map(|&p| u32::from(p)).sum::<u32>();
+            let speed = (f64::from(sum) / 254.0).max(0.0).min(1.0);
             println!(
                 "note power: {:>4}  |  vibration speed: {:.5}  [{:<5}]",
                 sum, speed, "=".repeat((speed * 5.0) as usize)
